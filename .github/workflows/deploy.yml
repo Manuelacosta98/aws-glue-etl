@@ -1,40 +1,97 @@
-name: Deploy Glue ETL Jobs and Workflows
+name: AWS CDK PR Pipeline
 
 on:
-  push:
+  pull_request:
     branches:
-      - main
-  workflow_dispatch:
+      - main  # Trigger the workflow on PRs targeting the main branch
 
 jobs:
-  deploy:
+  cdk-diff:
     runs-on: ubuntu-latest
+    environment: staging  # Specify the environment for diff checks (e.g., staging)
 
     steps:
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v2
 
+      # Step 2: Set up Node.js (AWS CDK uses Node.js)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22'  # Use the appropriate Node.js version for your CDK
+
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          npm install -g aws-cdk  # Install AWS CDK globally
+          npm install             # Install project dependencies
+
+      # Step 4: Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # Step 5: Run cdk diff to check for changes
+      - name: Run cdk diff
+        run: |
+          cdk diff  # This shows the differences between the current state and proposed changes
+
+      # Optional: Step 6: Notify about the diff result (if needed)
+      - name: Comment on PR with diff result
+        run: |
+          if [[ $(cdk diff) != "" ]]; then
+            echo "Differences found in infrastructure, posting comment on PR..."
+            curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                 -X POST \
+                 -d "{\"body\": \"Changes detected in the AWS CDK stack. Please review the output of cdk diff.\n\n\`\`\`$(cdk diff)\`\`\`\"}" \
+                 "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+          fi
+        continue-on-error: true  # Allow the workflow to continue even if cdk diff finds changes
+
+  approve-deployment:
+    needs: cdk-diff
+    runs-on: ubuntu-latest
+    environment: production  # Deploy to production after approval
+
+    steps:
+      # Step 1: Checkout code again (needed because this is a separate job)
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Set up Node.js (same as before)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '22'
 
+      # Step 3: Install dependencies (same as before)
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm install -g aws-cdk
+          npm install
 
-      - name: Set up AWS credentials
+      # Step 4: Configure AWS credentials (same as before)
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: CDK Bootstrap
-        run: npx cdk bootstrap
+      # Step 5: Manual approval for deployment
+      - name: Manual Approval
+        if: github.event.pull_request.merged == true 
+        run: |
+          echo "Manual approval required before deploying changes."
+        timeout-minutes: 10  # Define an approval timeout period (optional)
 
-      - name: CDK Deploy
-        run: npx cdk deploy --require-approval never
+      # Step 6: Deploy to AWS after approval
+      - name: Deploy AWS CDK Stack
+        run: |
+          cdk bootstrap  # Bootstraps AWS environment if not already done
+          cdk deploy --require-approval never  # Deploy CDK changes automatically after approval
 
-      - name: Clean up (CDK Destroy)
-        if: always()
-        run: npx cdk destroy --force
