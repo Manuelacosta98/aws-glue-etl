@@ -1,0 +1,10 @@
+{
+    "name": "minimal_spark_job",
+    "description": "A minimal spark job",
+    "type": "spark",
+    "glue_version": "5.0",
+    "worker_type": "G.1X",
+    "number_of_workers": 2,
+    "connections": ["connection_name1"],
+    "script_location": "jobs/extract/extract_data.py"
+  }

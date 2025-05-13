@@ -1,0 +1,24 @@
+{
+  "name": "job_name",
+  "description": "Job description",
+  "type": "spark",
+  "glue_version": "5.0",
+  "worker_type": "G.1X",
+  "number_of_workers": 2,
+  "timeout_minutes": 60,
+  "max_retries": 0,
+  "default_arguments": {
+    "--enable-metrics": "true",
+    "--job-language": "python",
+    "--enable-spark-ui": "true",
+    "--spark-event-logs-path": "s3://aws-glue-assets-{account_id}-{region}/sparkHistoryLogs/",
+    "--additional-python-modules": "package1==1.0.0,package2==2.0.0",
+    "--extra-py-files": "s3://bucket/path/to/dependencies.zip",
+    "--TempDir": "s3://aws-glue-temporary/",
+    "--enable-continuous-cloudwatch-log": "true",
+    "--enable-job-insights": "true"
+  },
+  "connections": ["connection_name1"],
+  "max_concurrent_runs": 1,
+  "script_location": "jobs/extract/extract_data.py"
+}

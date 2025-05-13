@@ -1,0 +1,7 @@
+{
+    "name": "minimal_python_shell_job",
+    "description": "A minimal python shell job",
+    "type": "python",
+    "number_of_workers": 1,
+    "script_location": "jobs/extract/extract_data.py"
+}

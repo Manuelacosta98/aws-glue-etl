@@ -1,0 +1,30 @@
+{
+  "Name": "elt_workflow",
+  "Description": "ETL workflow for AWS Glue jobs",
+  "triggers": [
+    {
+      "name": "DailyTrigger",
+      "type": "SCHEDULED",
+      "schedule": "cron(0 2 * * ? *)",
+      "actions": [
+        { "jobName": "extract_data_job" }
+      ]
+    }
+  ],
+  "Steps": [
+    {
+      "Name": "Extract",
+      "JobName": "extract_data_job"
+    },
+    {
+      "Name": "Transform",
+      "JobName": "transform_data_job",
+      "DependsOn": ["Extract"]
+    },
+    {
+      "Name": "Load",
+      "JobName": "load_data_job",
+      "DependsOn": ["Transform"]
+    }
+  ]
+}

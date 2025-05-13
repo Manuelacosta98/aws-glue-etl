@@ -1,0 +1,38 @@
+{
+    "Name": "conditional_workflow",
+    "Description": "A default conditional Glue workflow example",
+    "triggers": [
+      {
+        "name": "ConditionalTrigger",
+        "type": "CONDITIONAL",
+        "predicate": {
+          "conditions": [
+            {
+              "jobName": "extract_data_job",
+              "state": "SUCCEEDED"
+            }
+          ],
+          "logical": "AND"
+        },
+        "actions": [
+          { "jobName": "transform_data_job" }
+        ]
+      }
+    ],
+    "Steps": [
+      {
+        "Name": "Extract",
+        "JobName": "extract_data_job"
+      },
+      {
+        "Name": "Transform",
+        "JobName": "transform_data_job",
+        "DependsOn": ["Extract"]
+      },
+      {
+        "Name": "Load",
+        "JobName": "load_data_job",
+        "DependsOn": ["Transform"]
+      }
+    ]
+  }

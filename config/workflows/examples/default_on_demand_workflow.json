@@ -1,0 +1,29 @@
+{
+    "Name": "on_demand_workflow",
+    "Description": "A default on-demand Glue workflow example",
+    "triggers": [
+      {
+        "name": "OnDemandTrigger",
+        "type": "ON_DEMAND",
+        "actions": [
+          { "jobName": "extract_data_job" }
+        ]
+      }
+    ],
+    "Steps": [
+      {
+        "Name": "Extract",
+        "JobName": "extract_data_job"
+      },
+      {
+        "Name": "Transform",
+        "JobName": "transform_data_job",
+        "DependsOn": ["Extract"]
+      },
+      {
+        "Name": "Load",
+        "JobName": "load_data_job",
+        "DependsOn": ["Transform"]
+      }
+    ]
+  }

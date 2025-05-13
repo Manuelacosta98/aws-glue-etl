@@ -1,0 +1,12 @@
+version: "3"
+services:
+  glue-job:
+    build: .
+    volumes:
+      - ./jobs:/workspace/jobs
+      - ./jobs/config:/workspace/jobs/config
+    environment:
+      - AWS_ACCESS_KEY_ID=your-access-key
+      - AWS_SECRET_ACCESS_KEY=your-secret-key
+      - AWS_DEFAULT_REGION=us-west-2
+    command: ["python3", "/workspace/jobs/extract/extract_data.py"]
