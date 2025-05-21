@@ -1,11 +1,11 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "1ae46f985e89090d0a223df8e5ea5ffeb891d75d6f0f8173eb20dbcbb078109a"
+            "sha256": "9eeb9faf344c706e56c18bfa2aff51798aa668741cb53a9271ce24431a47265e"
         },
         "pipfile-spec": 6,
         "requires": {
-            "python_version": "3.10"
+            "python_version": "3.12"
         },
         "sources": [
             {
@@ -35,11 +35,11 @@
         },
         "aws-cdk.asset-awscli-v1": {
             "hashes": [
-                "sha256:3a83c0d962f1db4f8b200670aa6cb21ead2f83751f7709f4003c92ef2faa268e",
-                "sha256:50d22055b5c746f7a1884dd0db1f88b9c13fef33ae744f85e2491bb34372e01e"
+                "sha256:642805ba143b35d11d5b5e80ab728db2ec8b894b2837b629ad95601e7e189e4c",
+                "sha256:e1dd0086af180c381d3ee81eb963a1f469627763e0507982b6f2d4075446bdf4"
             ],
             "markers": "python_version ~= '3.9'",
-            "version": "==2.2.233"
+            "version": "==2.2.237"
         },
         "aws-cdk.asset-node-proxy-agent-v6": {
             "hashes": [
@@ -74,14 +74,6 @@
             "markers": "python_version ~= '3.8'",
             "version": "==10.4.2"
         },
-        "exceptiongroup": {
-            "hashes": [
-                "sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b",
-                "sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc"
-            ],
-            "markers": "python_version < '3.11'",
-            "version": "==1.2.2"
-        },
         "importlib-resources": {
             "hashes": [
                 "sha256:185f87adef5bcc288449d98fb4fba07cea78bc036455dd44c5fc4a2fe78fed2c",
@@ -92,11 +84,11 @@
         },
         "jsii": {
             "hashes": [
-                "sha256:3084e31173e73d2eefee678c8ee31aa49428830509043057a421a4c0dde94434",
-                "sha256:db523ab9b6575c84d6ed8779cdbdc739abd48a7cb0723b66beb84c1a9dc31c7c"
+                "sha256:6510c223074d9b206fd0570849a791e4d9ecfff7ffe68428de73870cea9f55a1",
+                "sha256:6b7d19f361c2565b76828ecbe8cbed8b8d6028a82aa98a46b206a4ee5083157e"
             ],
             "markers": "python_version ~= '3.9'",
-            "version": "==1.111.0"
+            "version": "==1.112.0"
         },
         "publication": {
             "hashes": [
@@ -110,7 +102,7 @@
                 "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3",
                 "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==2.9.0.post0"
         },
         "six": {
@@ -118,7 +110,7 @@
                 "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274",
                 "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"
             ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2'",
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==1.17.0"
         },
         "typeguard": {
