@@ -1,5 +1,7 @@
 import os
-
+from aws_cdk import (
+    aws_glue as glue
+)
 
 def snake_to_camel_case(snake_str):
     """
@@ -78,28 +80,29 @@ def get_job_props_from_config(config, glue_role_arn, script_asset, folder, scrip
     python_version = config.get("python_version", "3.10")
     job_type = config.get("type", "python")
 
-    command_props = {
-        "script_location": f"s3://{script_asset.s3_bucket_name}/{script_asset.s3_object_key}"
-    }
+    script_location = f"s3://{script_asset.s3_bucket_name}/{script_asset.s3_object_key}"
     if job_type == "spark":
-        command_props["name"] = "glueetl"
-        command_props["python_version"] = python_version
+        command_name = "glueetl"
+        if worker_type:
+            job_props["worker_type"] = worker_type
+        if number_of_workers:
+            job_props["number_of_workers"] = number_of_workers
     else:
-        command_props["name"] = "pythonshell"
-        command_props["python_version"] = python_version
+        command_name = "pythonshell"
 
     job_props = dict(
         role=glue_role_arn,
-        command={"Name": command_props["name"], "ScriptLocation": command_props["script_location"], "PythonVersion": command_props["python_version"]},
+        command=glue.CfnJob.JobCommandProperty(
+            name=command_name,
+            script_location=script_location,
+            python_version=python_version
+        ),
         default_arguments=default_arguments,
         glue_version=glue_version,
         max_retries=max_retries,
         timeout=timeout,
         tags={"JobFolder": folder}
     )
-    if worker_type:
-        job_props["worker_type"] = worker_type
-    if number_of_workers:
-        job_props["number_of_workers"] = number_of_workers
+
 
     return job_props

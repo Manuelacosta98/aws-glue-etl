@@ -9,22 +9,36 @@
       "actions": [
         { "jobName": "extract_data_job" }
       ]
-    }
-  ],
-  "Steps": [
-    {
-      "Name": "Extract",
-      "JobName": "extract_data_job"
     },
     {
-      "Name": "Transform",
-      "JobName": "transform_data_job",
-      "DependsOn": ["Extract"]
+      "name": "TransformTrigger",
+      "type": "CONDITIONAL",
+      "predicate": {
+        "conditions": [
+          {
+            "jobName": "extract_data_job",
+            "state": "SUCCEEDED"
+          }
+        ]
+      },
+      "actions": [
+        { "jobName": "transform_data_job" }
+      ]
     },
     {
-      "Name": "Load",
-      "JobName": "load_data_job",
-      "DependsOn": ["Transform"]
+      "name": "LoadTrigger",
+      "type": "CONDITIONAL",
+      "predicate": {
+        "conditions": [
+          {
+            "jobName": "transform_data_job",
+            "state": "SUCCEEDED"
+          }
+        ]
+      },
+      "actions": [
+        { "jobName": "load_data_job" }
+      ]
     }
   ]
 }
