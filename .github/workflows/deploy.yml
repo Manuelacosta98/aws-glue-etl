@@ -1,19 +1,51 @@
-name: AWS CDK PR Pipeline
+name: AWS Glue ETL Deployment Workflow
+description: |
+  This workflow automates the deployment of AWS Glue ETL jobs using AWS CDK.
+  It includes a manual approval step before deploying to production.
 
+permissions:
+  id-token: write
+  contents: read
+
+# Global environment variables
+env:
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_REGION: us-east-1
+  AWS_GITHUB_ASSUME_ROLE: ${{ secrets.AWS_GITHUB_ASSUME_ROLE_ARN }}
+  
+  
+# Define workflow triggers
 on:
-  pull_request:
+  workflow_dispatch:  # Allows manual triggering of the workflow
+  pull_request:      # Runs lint and test on PRs to main branch
     branches:
-      - main  # Trigger the workflow on PRs targeting the main branch
+      - main
+    paths-ignore:
+      - "README.md"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "README.md"
 
 jobs:
   cdk-diff:
+    name: Check for CDK Changes
+    # This job will run on pull requests to check for changes in the CDK stack
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    environment: staging  # Specify the environment for diff checks (e.g., staging)
+    environment: production  # Specify the environment for diff checks (e.g., staging)
 
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_GITHUB_ASSUME_ROLE }}
 
       # Step 2: Set up Node.js (AWS CDK uses Node.js)
       - name: Set up Node.js
@@ -25,73 +57,98 @@ jobs:
       - name: Install dependencies
         run: |
           npm install -g aws-cdk  # Install AWS CDK globally
-          npm install             # Install project dependencies
 
-      # Step 4: Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      # Install pyenv and Python 3.12
+      - name: Setup pyenv and Python 3.12
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          python-version: 3.12
 
-      # Step 5: Run cdk diff to check for changes
+      # Install dependencies in infra folder & activate venv
+      - name: Install Python dependencies
+        working-directory: infra
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Run cdk diff inside venv
       - name: Run cdk diff
+        working-directory: infra
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
-          cdk diff  # This shows the differences between the current state and proposed changes
+          source .venv/bin/activate
+          cdk diff
 
-      # Optional: Step 6: Notify about the diff result (if needed)
+      # Optional: Comment on PR with diff result
       - name: Comment on PR with diff result
+        working-directory: infra
+        if: success()
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
-          if [[ $(cdk diff) != "" ]]; then
+          source infra/.venv/bin/activate
+          DIFF_OUTPUT=$(cdk diff)
+          if [[ "$DIFF_OUTPUT" != "" ]]; then
             echo "Differences found in infrastructure, posting comment on PR..."
             curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                 -X POST \
-                 -d "{\"body\": \"Changes detected in the AWS CDK stack. Please review the output of cdk diff.\n\n\`\`\`$(cdk diff)\`\`\`\"}" \
-                 "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
+                -X POST \
+                -d "{\"body\": \"Changes detected in the AWS CDK stack. Please review the output of cdk diff.\n\n\`\`\`$DIFF_OUTPUT\`\`\`\"}" \
+                "https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments"
           fi
-        continue-on-error: true  # Allow the workflow to continue even if cdk diff finds changes
+        continue-on-error: true
 
   approve-deployment:
+    name: Deploy to Production
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: cdk-diff
     runs-on: ubuntu-latest
-    environment: production  # Deploy to production after approval
+    environment: production
 
     steps:
-      # Step 1: Checkout code again (needed because this is a separate job)
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js (same as before)
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ env.AWS_GITHUB_ASSUME_ROLE }}
+
+      # Step 2: Set up Node.js (AWS CDK uses Node.js)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '22'
+          node-version: '22'  # Use the appropriate Node.js version for your CDK
 
-      # Step 3: Install dependencies (same as before)
+      # Step 3: Install dependencies
       - name: Install dependencies
         run: |
-          npm install -g aws-cdk
-          npm install
+          npm install -g aws-cdk  # Install AWS CDK globally
 
-      # Step 4: Configure AWS credentials (same as before)
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Setup pyenv and Python 3.12
+        uses: actions/setup-python@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          python-version: 3.12
 
-      # Step 5: Manual approval for deployment
-      - name: Manual Approval
-        if: github.event.pull_request.merged == true 
+      - name: Install Python dependencies
+        working-directory: infra
         run: |
-          echo "Manual approval required before deploying changes."
-        timeout-minutes: 10  # Define an approval timeout period (optional)
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
-      # Step 6: Deploy to AWS after approval
       - name: Deploy AWS CDK Stack
+        working-directory: infra
+        env:
+          CDK_DEFAULT_ACCOUNT: ${{ env.AWS_ACCOUNT_ID }}
+          CDK_DEFAULT_REGION: ${{ env.AWS_REGION }}
         run: |
-          cdk bootstrap  # Bootstraps AWS environment if not already done
-          cdk deploy --require-approval never  # Deploy CDK changes automatically after approval
-
+          source .venv/bin/activate
+          cdk bootstrap
+          cdk deploy --require-approval never
