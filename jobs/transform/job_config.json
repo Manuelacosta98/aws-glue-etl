@@ -1,0 +1,6 @@
+{
+    "name": "transform_data_job",
+    "description": "A minimal python shell job",
+    "type": "python",
+    "script_location": "jobs/extract/transform_data_job.py"
+}

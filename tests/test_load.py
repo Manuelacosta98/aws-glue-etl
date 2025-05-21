@@ -1,5 +1,5 @@
 import unittest
-from jobs.load.load_data import load_data
+from jobs.load.load_data_job import load_data
 
 class TestLoadData(unittest.TestCase):
     def test_load_data_success(self):
